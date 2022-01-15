@@ -34,6 +34,11 @@ die ()
   exit 1
 }
 
+log ()
+{
+  echo "[LOG] - $(date): ${1}"
+}
+
 warn ()
 {
   echo "[WARN]: ${1}"
@@ -70,7 +75,7 @@ slack_username ()
 send_slack_message ()
 {
   if [ -n "${SLACK_API_TOKEN}" ]; then
-    log "SLACK_API_TOKEN is set.  sending slack message to channel ${1}"
+    debug "SLACK_API_TOKEN is set.  sending slack message to channel ${1}"
     curl \
       --silent \
       --show-error \
@@ -78,7 +83,7 @@ send_slack_message ()
       'https://slack.com/api/chat.postMessage'
     echo # add a new-line to the output so it's easier to read the logs
   else
-    log "SLACK_API_TOKEN is not present.  Message not sent to slack channel '${1}' message: '${2}'"
+    debug "SLACK_API_TOKEN is not present.  Message not sent to slack channel '${1}' message: '${2}'"
   fi
 }
 
