@@ -24,7 +24,7 @@ You will need to provide values for the following variables:
 - `DB_USERNAME: '<redacted>'`
 - `DB_PASSWORD: '<redacted>'`
 - `DB_HOSTNAME: '<redacted>'`
-- `AWS_ACCESS_KEY_ID: '<redacted>'``
+- `AWS_ACCESS_KEY_ID: '<redacted>'`
 - `AWS_SECRET_ACCESS_KEY: '<redacted>'`
 
 ### 2.  Create Secret
