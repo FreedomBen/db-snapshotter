@@ -142,8 +142,10 @@ backup-postgres ()
   pg_dump "${TARGET_DATABASE}" --inserts -U "${DB_USERNAME}" -h "${DB_HOSTNAME}" -p "${DB_PORT}" > "${output_file}" 2> pgstderr.log
   local retval="$?"
 
+  debug "pg_dump retval is '${retval}'"
+
   cat pgstderr.log
-  if [ "$?" != '0' ]; then
+  if [ "${retval}" != '0' ]; then
     die "pg_dump exited with status '${retval}': $(cat "${output_file}")"
   fi
 
