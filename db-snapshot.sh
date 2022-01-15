@@ -27,10 +27,17 @@
 # SLACK_ICON_EMOJI=':database:'
 
 
+START_TIME_SEC="$(date '+%s')"
+
+runtime_seconds ()
+{
+  echo $(( $(date '+%s') - $START_TIME_SEC ))
+}
+
 die ()
 {
   echo "[FATAL]:  ${1}"
-  slack_error "[FATAL]: $(date): Backup of database '${TARGET_DATABASE}' failed: ${1}"
+  slack_error "[FATAL]: $(date): Backup of database '${TARGET_DATABASE}' failed after $(runtime_seconds) seconds: ${1}"
   exit 1
 }
 
@@ -148,7 +155,7 @@ backup-postgres ()
   info "pg_dump output: ${pgstderr}"
 
   if [ "${retval}" != '0' ]; then
-    die "pg_dump exited with status '${retval}': ${pgstderr}"
+    die "Backup of database '${TARGET_DATABASE}' failed at $(date) after running for $(runtime_seconds) seconds.  Check logs with 'kubectl logs $(cat /etc/podinfo/podname) -n $(cat /etc/podinfo/namespace)':  pg_dump exited with status '${retval}': ${pgstderr}"
   fi
 
   info "pg_dump to file '${output_file}' is complete.  Total size is:"
@@ -162,9 +169,9 @@ backup-postgres ()
   local retval="$?"
   info "Upload completed with exit code '${retval}'"
   if [ "${retval}" = '0' ]; then
-    slack_success "Backup of database '${TARGET_DATABASE}' succeeded at $(date).  Total size: ${size}."
+    slack_success "Backup of database '${TARGET_DATABASE}' succeeded at $(date) after running for $(runtime_seconds) seconds.  Total size: ${size}."
   else
-    slack_error "Backup of database '${TARGET_DATABASE}' failed at $(date).  Check logs with 'kubectl logs $(cat /etc/podinfo/podname) -n $(cat /etc/podinfo/namespace)'"
+    slack_error "Backup of database '${TARGET_DATABASE}' failed at $(date) after running for $(runtime_seconds) seconds.  Check logs with 'kubectl logs $(cat /etc/podinfo/podname) -n $(cat /etc/podinfo/namespace)'"
   fi
   return "${retval}"
 }
