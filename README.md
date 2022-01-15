@@ -16,7 +16,7 @@ You will need to provide values for the following variables:
 
 - `DB_TYPE:  'postgres'  # || 'mysql'`
 - `AWS_ENDPOINT_URL:   'https://s3.us-west-002.backblazeb2.com'`
-- `TARGET_DATABASE:  `'service_name_prod'``
+- `TARGET_DATABASE:  'service_name_prod'`
 - `BUCKET_NAME:  'db-backups'`
 - `DB_PORT:  '25060'`
 - `PREFIX:  'daily'`
