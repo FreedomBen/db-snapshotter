@@ -117,3 +117,15 @@ spec:
           restartPolicy: Never
 ```
 
+### 5.  Run the Job
+
+If you created a `Job` it will run immediately.  If you created a `CronJob`
+but would like to run it immediately for testing purposes (a wise plan), you
+can create a `Job` from the `CronJob` with:
+
+```bash
+CRONJOB_NAME='db-snapshotter'
+NEW_JOB_NAME="db-snapshotter-manual-run-$(date '+%Y-%m-%d-%H-%M-%S')"
+
+kubectl create job --from="cronjob/${CRONJOB_NAME}" "${NEW_JOB_NAME}"
+```
