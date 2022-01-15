@@ -18,7 +18,7 @@ spec:
         - name: ameelio-registry
       containers:
       - name: db-snapshotter
-        image: docker.io/freedomben/db-snapshotter-dev:latest
+        image: docker.io/freedomben/db-snapshotter:latest
         imagePullPolicy: Always
         envFrom:
           - configMapRef:
