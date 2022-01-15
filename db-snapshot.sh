@@ -30,7 +30,7 @@
 die ()
 {
   echo "[FATAL]:  ${1}"
-  slack_error "[FATAL]: $(date): Backup of database '' failed: ${1}"
+  slack_error "[FATAL]: $(date): Backup of database '${TARGET_DATABASE}' failed: ${1}"
   exit 1
 }
 
@@ -144,7 +144,9 @@ backup-postgres ()
 
   debug "pg_dump retval is '${retval}'"
 
-  cat pgstderr.log
+  local pgstderr="$(cat pgstderr.log)"
+  info "pg_dump output: ${pgstderr}"
+
   if [ "${retval}" != '0' ]; then
     die "pg_dump exited with status '${retval}': $(cat "${output_file}")"
   fi
