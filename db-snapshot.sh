@@ -139,9 +139,10 @@ backup-postgres ()
   slack_info "Beginning dump of database '${TARGET_DATABASE}' at $(date)"
 
   # Dump to a file
-  pg_dump "${TARGET_DATABASE}" --inserts -U "${DB_USERNAME}" -h "${DB_HOSTNAME}" -p "${DB_PORT}" > "${output_file}" 2>&1
-
+  pg_dump "${TARGET_DATABASE}" --inserts -U "${DB_USERNAME}" -h "${DB_HOSTNAME}" -p "${DB_PORT}" > "${output_file}" 2> pgstderr.log
   local retval="$?"
+
+  cat pgstderr.log
   if [ "$?" != '0' ]; then
     die "pg_dump exited with status '${retval}': $(cat "${output_file}")"
   fi
