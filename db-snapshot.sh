@@ -139,7 +139,12 @@ backup-postgres ()
   slack_info "Beginning dump of database '${TARGET_DATABASE}' at $(date)"
 
   # Dump to a file
-  pg_dump "${TARGET_DATABASE}" --inserts -U "${DB_USERNAME}" -h "${DB_HOSTNAME}" -p "${DB_PORT}" > "${output_file}"
+  pg_dump "${TARGET_DATABASE}" --inserts -U "${DB_USERNAME}" -h "${DB_HOSTNAME}" -p "${DB_PORT}" > "${output_file}" 2>&1
+
+  local retval="$?"
+  if [ "$?" != '0' ]; then
+    die "pg_dump exited with status '${retval}': $(cat "${output_file}")"
+  fi
 
   info "pg_dump to file '${output_file}' is complete.  Total size is:"
   local size="$(du -hs "${output_file}")"
@@ -149,7 +154,7 @@ backup-postgres ()
   info "Uploading to endpoint '${AWS_ENDPOINT_URL}', bucket '${BUCKET_NAME}', key '${PREFIX}/${output_file}'"
   aws s3 cp --endpoint-url="${AWS_ENDPOINT_URL}" "${output_file}" "s3://${BUCKET_NAME}/${PREFIX}/${output_file}"
 
-  retval="$?"
+  local retval="$?"
   info "Upload completed with exit code '${retval}'"
   if [ "${retval}" = '0' ]; then
     slack_success "Backup of database '${TARGET_DATABASE}' succeeded at $(date).  Total size: ${size}."
