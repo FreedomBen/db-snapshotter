@@ -14,18 +14,18 @@ should be passed through a `ConfigMap`, while sensitive values should use
 
 You will need to provide values for the following variables:
 
-- `DB_TYPE`:  'postgres'  # || 'mysql'
-- `AWS_ENDPOINT_URL`:   'https://s3.us-west-002.backblazeb2.com'
-- `TARGET_DATABASE`:  `'service_name_prod'`
-- `BUCKET_NAME`:  'db-backups'
-- `DB_PORT`:  '25060'
-- `PREFIX`:  'daily'
-- `SERVICE_NAME`:  'service_name'
-- `DB_USERNAME`: '<redacted>'
-- `DB_PASSWORD`: '<redacted>'
-- `DB_HOSTNAME`: '<redacted>'
-- `AWS_ACCESS_KEY_ID`: '<redacted>'
-- `AWS_SECRET_ACCESS_KEY`: '<redacted>'
+- `DB_TYPE:  'postgres'  # || 'mysql'`
+- `AWS_ENDPOINT_URL:   'https://s3.us-west-002.backblazeb2.com'`
+- `TARGET_DATABASE:  `'service_name_prod'``
+- `BUCKET_NAME:  'db-backups'`
+- `DB_PORT:  '25060'`
+- `PREFIX:  'daily'`
+- `SERVICE_NAME:  'service_name'`
+- `DB_USERNAME: '<redacted>'`
+- `DB_PASSWORD: '<redacted>'`
+- `DB_HOSTNAME: '<redacted>'`
+- `AWS_ACCESS_KEY_ID: '<redacted>'``
+- `AWS_SECRET_ACCESS_KEY: '<redacted>'`
 
 ### 2.  Create Secret
 
