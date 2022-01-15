@@ -27,6 +27,16 @@ You will need to provide values for the following variables:
 - `AWS_ACCESS_KEY_ID: '<redacted>'`
 - `AWS_SECRET_ACCESS_KEY: '<redacted>'`
 
+Optionally, to enable notifications over Slack, set:
+
+- `SLACK_API_TOKEN:  '<token>'`
+- `SLACK_CHANNEL_INFO: '<redacted>'`
+- `SLACK_CHANNEL_ERROR: '<redacted>'`
+- `SLACK_CHANNEL_SUCCESS: '<redacted>'`
+- `SLACK_USERNAME: '<redacted>'  # optional customization`
+- `SLACK_ICON_EMOJI: '<redacted>'  # optional customization`
+
+
 ### 2.  Create Secret
 
 Configure and create a `Secret` defining the variables.  Here is an example:
@@ -47,6 +57,7 @@ stringData:
   DB_HOSTNAME: '<redacted>'
   AWS_ACCESS_KEY_ID: '<redacted>'
   AWS_SECRET_ACCESS_KEY: '<redacted>'
+  SLACK_API_TOKEN:  '<token>' # optional for slack notifications
 ```
 
 ### 3.  Update Configuration in `ConfigMap`
@@ -70,6 +81,11 @@ data:
   DB_PORT: '25060'
   PREFIX: 'daily'
   SERVICE_NAME: 'service_name'
+  SLACK_CHANNEL_INFO: '#infra-info'                   # channel to send info messages to
+  SLACK_CHANNEL_ERROR: '#infra-error'                 # channel to send error messages to
+  SLACK_CHANNEL_SUCCESS: '#infra-info'                # channel to send success messages to
+  SLACK_USERNAME: 'DB Snapshot for service-name prod' # optional username to post as
+  SLACK_ICON_EMOJI: ':database:'                      # optional emoji to use for avatar
 ```
 
 ### 4.  Create a `Job` or `CronJob`

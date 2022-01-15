@@ -53,6 +53,11 @@ data:
   DB_PORT: '25060'
   PREFIX: 'malan'
   SERVICE_NAME: 'malan'
+  SLACK_CHANNEL_INFO: '#infra-info'            # channel to send info messages to
+  SLACK_CHANNEL_ERROR: '#infra-error'          # channel to send error messages to
+  SLACK_CHANNEL_SUCCESS: '#infra-info'         # channel to send success messages to
+  SLACK_USERNAME: 'DB Snapshot for malan prod' # optional username to post as
+  SLACK_ICON_EMOJI: ':database:'               # optional emoji to use for avatar
   # These variables should come from a Secret
   #DB_USERNAME: ''
   #DB_HOSTNAME: ''
