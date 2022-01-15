@@ -148,7 +148,7 @@ backup-postgres ()
   info "pg_dump output: ${pgstderr}"
 
   if [ "${retval}" != '0' ]; then
-    die "pg_dump exited with status '${retval}': $(cat "${output_file}")"
+    die "pg_dump exited with status '${retval}': ${pgstderr}"
   fi
 
   info "pg_dump to file '${output_file}' is complete.  Total size is:"
