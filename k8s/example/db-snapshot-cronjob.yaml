@@ -1,0 +1,61 @@
+---
+#apiVersion: batch/v1  # use this once on on k8s 1.21
+apiVersion: batch/v1beta1
+kind: CronJob
+metadata:
+  name: db-snapshotter
+  namespace: db-snapshotter-prod
+  labels:
+    app: db-snapshotter
+spec:
+  schedule: "0 22 * * *" # 10 PM every day
+  jobTemplate:
+    metadata:
+      name: db-snapshotter-prod-job
+      namespace: db-snapshotter-prod
+      labels:
+        app: db-snapshotter
+    spec:
+      backoffLimit: 1
+      activeDeadlineSeconds: 1800
+      template:
+        metadata:
+          namespace: db-snapshotter-prod
+          labels:
+            app: db-snapshotter
+        spec:
+          imagePullSecrets:
+            - name: ameelio-registry
+          containers:
+          - name: db-snapshotter
+            image: docker.io/freedomben/db-snapshotter-dev:latest
+            imagePullPolicy: Always
+            envFrom:
+              - configMapRef:
+                  name: db-snapshotter-malan-config
+              - secretRef:
+                  name: db-snapshotter-malan-secrets
+          restartPolicy: Never
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: db-snapshotter-malan-config
+  namespace: db-snapshotter-prod
+  labels:
+    app: db-snapshotter
+data:
+  DB_TYPE: 'postgres'  # || 'mysql'
+  AWS_ENDPOINT_URL:  'https://s3.us-west-002.backblazeb2.com'
+  TARGET_DATABASE: 'malan_prod'
+  BUCKET_NAME: 'ameelio-db-backups'
+  DB_PORT: '25060'
+  PREFIX: 'malan'
+  SERVICE_NAME: 'malan'
+  # These variables should come from a Secret
+  #DB_USERNAME: ''
+  #DB_HOSTNAME: ''
+  #DB_PASSWORD: ''
+  #AWS_ACCESS_KEY_ID: ''
+  #AWS_SECRET_ACCESS_KEY: ''
