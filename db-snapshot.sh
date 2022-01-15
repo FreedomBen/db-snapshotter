@@ -154,10 +154,6 @@ backup-postgres ()
   local pgstderr="$(cat pgstderr.log)"
   info "pg_dump output: ${pgstderr}"
 
-
-  slack_error "[FATAL]: $(date): Backup of database '${TARGET_DATABASE}' failed after $(runtime_seconds) seconds: ${1}"
-
-
   if [ "${retval}" != '0' ]; then
     die "Check logs with: \`\`\`kubectl logs $(cat /etc/podinfo/podname) -n $(cat /etc/podinfo/namespace)\`\`\` pg_dump exited with status '${retval}': ${pgstderr}"
   fi
