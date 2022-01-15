@@ -155,7 +155,7 @@ backup-postgres ()
   info "pg_dump output: ${pgstderr}"
 
   if [ "${retval}" != '0' ]; then
-    die "Check logs with: \`\`\`kubectl logs $(cat /etc/podinfo/podname) -n $(cat /etc/podinfo/namespace)\`\`\` pg_dump exited with status '${retval}': ${pgstderr}"
+    die "Check logs with: \`\`\`kubectl logs $(cat /etc/podinfo/podname) -n $(cat /etc/podinfo/namespace)\`\`\` pg_dump exited with status '${retval}': \`\`\`${pgstderr}\`\`\`"
   fi
 
   info "pg_dump to file '${output_file}' is complete.  Total size is:"
@@ -171,7 +171,7 @@ backup-postgres ()
   if [ "${retval}" = '0' ]; then
     slack_success "Backup of database '${TARGET_DATABASE}' succeeded at $(date) after running for $(runtime_seconds) seconds.  Total size: ${size}."
   else
-    slack_error "Backup of database '${TARGET_DATABASE}' failed at $(date) after running for $(runtime_seconds) seconds.  Check logs with: \`\`\`kubectl logs $(cat /etc/podinfo/podname) -n $(cat /etc/podinfo/namespace)\`\`\`"
+    slack_error "Backup of database '${TARGET_DATABASE}' dumped successful but uploading to object storage failed at $(date) after running for $(runtime_seconds) seconds.  Check logs with: \`\`\`kubectl logs $(cat /etc/podinfo/podname) -n $(cat /etc/podinfo/namespace)\`\`\`"
   fi
   return "${retval}"
 }
