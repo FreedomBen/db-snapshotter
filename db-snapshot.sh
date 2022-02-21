@@ -139,7 +139,7 @@ backup-postgres ()
 {
   debug "Backing up postgres database"
 
-  output_file="${SERVICE_NAME}_${TARGET_DATABASE}_$(date '+%Y-%m-%d-%H-%M-%S').sql"
+  output_file="${SERVICE_NAME}_${TARGET_DATABASE}_$(date '+%Y-%m-%d-%H-%M-%S')-pgsql.sql"
   export PGPASSWORD="${DB_PASSWORD}"
 
   info "Dumping database to file '${output_file}'"
