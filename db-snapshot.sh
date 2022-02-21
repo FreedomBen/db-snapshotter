@@ -130,9 +130,35 @@ aws_endpoint_url ()
 
 backup-mysql ()
 {
-  die "MySQL is not yet supported"
+  debug "Backing up mysql database"
 
-  false
+  output_file="${SERVICE_NAME}_${TARGET_DATABASE}_$(date '+%Y-%m-%d-%H-%M-%S')-mysql.sql"
+
+  info "Dumping database to file '${output_file}'"
+  slack_info "Beginning dump of database '${TARGET_DATABASE}' at $(date)"
+
+  # Dump to a file
+  mysqldump "${TARGET_DATABASE}" -h "${DB_HOSTNAME}" -u "${DB_USERNAME}" -p"${DB_PASSWORD}" | gzip -c > "${output_file}"
+
+  mysqldump letters -h localhost -u letters -p8qa5trsl45cnh7dortn3 | gzip -c > letters-mysqldump-$(date +%Y-%m-%d-%H-%M-%S).sql.gz 2> mysqlstderr.log
+  local retval="$?"
+
+  debug "mysqldump retval is '${retval}'"
+
+  local mysqlstderr="$(cat mysqlstderr.log)"
+  info "mysqldump output: ${mysqlstderr}"
+
+  if [ "${retval}" != '0' ]; then
+    die "Check logs with: \`\`\`kubectl logs $(cat /etc/podinfo/podname) -n $(cat /etc/podinfo/namespace)\`\`\` mysqldump exited with status '${retval}': \`\`\`${mysqlstderr}\`\`\`"
+  fi
+
+  info "mysqldump to file '${output_file}' is complete.  Total size is:"
+  local size="$(du -hs "${output_file}")"
+  info "${size}"
+
+  # Upload file to destination bucket
+  retval="$(upload_file_to_bucket "${output_file}")" "${size}"
+  return "${retval}"
 }
 
 backup-postgres ()
@@ -161,6 +187,25 @@ backup-postgres ()
   info "pg_dump to file '${output_file}' is complete.  Total size is:"
   local size="$(du -hs "${output_file}")"
   info "${size}"
+
+  # Upload file to destination bucket
+  info "Uploading to endpoint '${AWS_ENDPOINT_URL}', bucket '${BUCKET_NAME}', key '${PREFIX}/${output_file}'"
+  aws s3 cp --endpoint-url="${AWS_ENDPOINT_URL}" "${output_file}" "s3://${BUCKET_NAME}/${PREFIX}/${output_file}"
+
+  local retval="$?"
+  info "Upload completed with exit code '${retval}'"
+  if [ "${retval}" = '0' ]; then
+    slack_success "Backup of database '${TARGET_DATABASE}' succeeded at $(date) after running for $(runtime_seconds) seconds.  Total size: ${size}."
+  else
+    slack_error "Backup of database '${TARGET_DATABASE}' dumped successful but uploading to object storage failed at $(date) after running for $(runtime_seconds) seconds.  Check logs with: \`\`\`kubectl logs $(cat /etc/podinfo/podname) -n $(cat /etc/podinfo/namespace)\`\`\`"
+  fi
+  return "${retval}"
+}
+
+upload_file_to_bucket ()
+{
+  local output_file="${1}"
+  local size="${2}"
 
   # Upload file to destination bucket
   info "Uploading to endpoint '${AWS_ENDPOINT_URL}', bucket '${BUCKET_NAME}', key '${PREFIX}/${output_file}'"
