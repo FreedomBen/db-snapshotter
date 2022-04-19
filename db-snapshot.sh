@@ -167,7 +167,7 @@ backup-mysql ()
 
   # Upload file to destination bucket
   retval="$(upload_file_to_bucket "${output_file}" "${size}")"
-  return "${retval}"
+  return ${retval}
 }
 
 backup-postgres ()
@@ -203,7 +203,7 @@ backup-postgres ()
 
   # Upload file to destination bucket
   retval="$(upload_file_to_bucket "${output_file}" "${size}")"
-  return "${retval}"
+  return ${retval}
 }
 
 upload_file_to_bucket ()
