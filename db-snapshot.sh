@@ -129,6 +129,11 @@ aws_endpoint_url ()
   fi
 }
 
+file_size ()
+{
+  echo "$(du -hs "${1}" | awk '{ print $1 }')"
+}
+
 backup-mysql ()
 {
   debug "Backing up mysql database"
@@ -153,17 +158,15 @@ backup-mysql ()
     die "Check logs with: \`\`\`kubectl logs $(cat /etc/podinfo/podname) -n $(cat /etc/podinfo/namespace)\`\`\` mysqldump exited with status '${retval}': \`\`\`${mysqlstderr}\`\`\`"
   fi
 
-  info "mysqldump to file '${sql_file}' is complete.  Total uncompressed size is:"
-  local size="$(du -hs "${sql_file}")"
-  info "${size}"
+  local size="$(file_size "${sql_file}")"
+  info "mysqldump to file '${sql_file}' is complete.  Total uncompressed size is: ${size}"
 
   gzip "${sql_file}"
-  size="$(du -hs "${output_file}")"
-  info "Compression of mysqldump file '${output_file}' is complete.  Total compressed size is:"
-  info "${size}"
+  size="$(file_size "${output_file}")"
+  info "Compression of mysqldump file '${output_file}' is complete.  Total compressed size is: ${size}"
 
   # Upload file to destination bucket
-  retval="$(upload_file_to_bucket "${output_file}")" "${size}"
+  retval="$(upload_file_to_bucket "${output_file}" "${size}")"
   return "${retval}"
 }
 
@@ -191,7 +194,7 @@ backup-postgres ()
   fi
 
   info "pg_dump to file '${output_file}' is complete.  Total size is:"
-  local size="$(du -hs "${output_file}")"
+  local size="$(file_size "${output_file}")"
   info "${size}"
 
   # Upload file to destination bucket
