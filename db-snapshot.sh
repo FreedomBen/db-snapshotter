@@ -222,6 +222,8 @@ upload_file_to_bucket ()
   else
     slack_error "Backup of database '${TARGET_DATABASE}' dumped successful but uploading to object storage failed at $(date) after running for $(runtime_seconds) seconds.  Check logs with: \`\`\`kubectl logs $(cat /etc/podinfo/podname) -n $(cat /etc/podinfo/namespace)\`\`\`"
   fi
+  echo # flush slack output \n
+  info "Upload success.  retval: '${retval}'"
   return "${retval}"
 }
 
