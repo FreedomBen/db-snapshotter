@@ -198,6 +198,8 @@ backup-postgres ()
   info "${size}"
 
   # Upload file to destination bucket
+  ## TODO: Compress the sql file before uploading
+  ## TODO: Update this to use upload_file_to_bucket
   info "Uploading to endpoint '${AWS_ENDPOINT_URL}', bucket '${BUCKET_NAME}', key '${PREFIX}/${output_file}'"
   aws s3 cp --endpoint-url="${AWS_ENDPOINT_URL}" "${output_file}" "s3://${BUCKET_NAME}/${PREFIX}/${output_file}"
 
