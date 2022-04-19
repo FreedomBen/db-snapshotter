@@ -166,8 +166,8 @@ backup-mysql ()
   info "Compression of mysqldump file '${output_file}' is complete.  Total compressed size is: ${size}"
 
   # Upload file to destination bucket
-  retval="$(upload_file_to_bucket "${output_file}" "${size}")"
-  return ${retval}
+  upload_file_to_bucket "${output_file}" "${size}"
+  return "$?"
 }
 
 backup-postgres ()
@@ -202,8 +202,8 @@ backup-postgres ()
   info "Compression of pg_dump file '${output_file}' is complete.  Total compressed size is: ${size}"
 
   # Upload file to destination bucket
-  retval="$(upload_file_to_bucket "${output_file}" "${size}")"
-  return ${retval}
+  upload_file_to_bucket "${output_file}" "${size}"
+  return "$?"
 }
 
 upload_file_to_bucket ()
@@ -223,7 +223,7 @@ upload_file_to_bucket ()
     slack_error "Backup of database '${TARGET_DATABASE}' dumped successful but uploading to object storage failed at $(date) after running for $(runtime_seconds) seconds.  Check logs with: \`\`\`kubectl logs $(cat /etc/podinfo/podname) -n $(cat /etc/podinfo/namespace)\`\`\`"
   fi
   echo # flush slack output \n
-  return ${retval}
+  return "${retval}"
 }
 
 verify_credentials ()
