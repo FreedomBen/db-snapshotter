@@ -141,7 +141,7 @@ backup-mysql ()
 
   # Dump to a file
   info "Dumping database at: '${DB_HOSTNAME}'"
-  mysqldump "${TARGET_DATABASE}" -h "${DB_HOSTNAME}" -u "${DB_USERNAME}" -p"${DB_PASSWORD}" > "${sql_file}" 2> mysqlstderr.log
+  mysqldump "${TARGET_DATABASE}" -h "${DB_HOSTNAME}" -P "${DB_PORT}" -u "${DB_USERNAME}" -p"${DB_PASSWORD}" > "${sql_file}" 2> mysqlstderr.log
   local retval="$?"
 
   debug "mysqldump retval is '${retval}'"
