@@ -139,7 +139,7 @@ backup-mysql ()
   slack_info "Beginning dump of database '${TARGET_DATABASE}' at $(date)"
 
   # Dump to a file
-  echo "Dumping database at: '${DB_HOSTNAME}'"
+  info "Dumping database at: '${DB_HOSTNAME}'"
   mysqldump "${TARGET_DATABASE}" -h "${DB_HOSTNAME}" -u "${DB_USERNAME}" -p"${DB_PASSWORD}" > "${sql_file}" 2> mysqlstderr.log
   local retval="$?"
 
