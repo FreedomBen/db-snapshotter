@@ -132,13 +132,14 @@ backup-mysql ()
 {
   debug "Backing up mysql database"
 
-  output_file="${SERVICE_NAME}_${TARGET_DATABASE}_$(date '+%Y-%m-%d-%H-%M-%S')-mysql.sql"
+  local sql_file="${SERVICE_NAME}_${TARGET_DATABASE}_$(date '+%Y-%m-%d-%H-%M-%S')-mysql.sql"
+  local output_file="${sql_file}.gz"
 
-  info "Dumping database to file '${output_file}'"
+  info "Dumping database to file '${sql_file}'"
   slack_info "Beginning dump of database '${TARGET_DATABASE}' at $(date)"
 
   # Dump to a file
-  mysqldump "${TARGET_DATABASE}" -h "${DB_HOSTNAME}" -u "${DB_USERNAME}" -p"${DB_PASSWORD}" 2> mysqlstderr.log | gzip -c > "${output_file}"
+  mysqldump "${TARGET_DATABASE}" -h "${DB_HOSTNAME}" -u "${DB_USERNAME}" -p"${DB_PASSWORD}" > "${sql_file}" 2> mysqlstderr.log
   local retval="$?"
 
   debug "mysqldump retval is '${retval}'"
@@ -150,8 +151,13 @@ backup-mysql ()
     die "Check logs with: \`\`\`kubectl logs $(cat /etc/podinfo/podname) -n $(cat /etc/podinfo/namespace)\`\`\` mysqldump exited with status '${retval}': \`\`\`${mysqlstderr}\`\`\`"
   fi
 
-  info "mysqldump to file '${output_file}' is complete.  Total size is:"
-  local size="$(du -hs "${output_file}")"
+  info "mysqldump to file '${sql_file}' is complete.  Total uncompressed size is:"
+  local size="$(du -hs "${sql_file}")"
+  info "${size}"
+
+  gzip "${sql_file}"
+  size="$(du -hs "${output_file}")"
+  info "Compression of mysqldump file '${output_file}' is complete.  Total compressed size is:"
   info "${size}"
 
   # Upload file to destination bucket
@@ -163,7 +169,7 @@ backup-postgres ()
 {
   debug "Backing up postgres database"
 
-  output_file="${SERVICE_NAME}_${TARGET_DATABASE}_$(date '+%Y-%m-%d-%H-%M-%S')-pgsql.sql"
+  local output_file="${SERVICE_NAME}_${TARGET_DATABASE}_$(date '+%Y-%m-%d-%H-%M-%S')-pgsql.sql"
   export PGPASSWORD="${DB_PASSWORD}"
 
   info "Dumping database to file '${output_file}'"
