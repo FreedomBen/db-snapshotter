@@ -38,6 +38,7 @@ die ()
 {
   echo "[FATAL]:  ${1}"
   slack_error "[FATAL]: $(date): Backup of database '${TARGET_DATABASE}' failed after $(runtime_seconds) seconds: ${1}"
+  sleep 28800
   exit 1
 }
 
