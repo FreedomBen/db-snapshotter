@@ -138,9 +138,7 @@ backup-mysql ()
   slack_info "Beginning dump of database '${TARGET_DATABASE}' at $(date)"
 
   # Dump to a file
-  mysqldump "${TARGET_DATABASE}" -h "${DB_HOSTNAME}" -u "${DB_USERNAME}" -p"${DB_PASSWORD}" | gzip -c > "${output_file}"
-
-  mysqldump letters -h localhost -u letters -p8qa5trsl45cnh7dortn3 | gzip -c > letters-mysqldump-$(date +%Y-%m-%d-%H-%M-%S).sql.gz 2> mysqlstderr.log
+  mysqldump "${TARGET_DATABASE}" -h "${DB_HOSTNAME}" -u "${DB_USERNAME}" -p"${DB_PASSWORD}" 2> mysqlstderr.log | gzip -c > "${output_file}"
   local retval="$?"
 
   debug "mysqldump retval is '${retval}'"
