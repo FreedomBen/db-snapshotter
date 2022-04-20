@@ -1,6 +1,6 @@
 # db-snapshotter
 
-Simple script to dump a PostgreSQL or MariaDB database into a .sql file,
+Simple script to dump a PostgreSQL or MariaDB database into a .sql.gz file,
 and upload it to object storage (S3 compatible, such as Backblaze).
 
 ## Quick Start
