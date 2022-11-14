@@ -1,4 +1,4 @@
-FROM almalinux:8
+FROM almalinux:8.6
 
 RUN groupadd --gid 1000 docker \
  && useradd --uid 1000 --gid 1000 --groups docker docker \
