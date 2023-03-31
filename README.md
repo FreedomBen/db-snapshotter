@@ -145,3 +145,4 @@ NEW_JOB_NAME="db-snapshotter-manual-run-$(date '+%Y-%m-%d-%H-%M-%S')"
 
 kubectl create job --from="cronjob/${CRONJOB_NAME}" "${NEW_JOB_NAME}"
 ```
+
