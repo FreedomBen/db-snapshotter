@@ -12,7 +12,7 @@ RUN dnf update -y \
     zip unzip \
     zstd \
     jq \
- && dnf module enable -y postgresql:14 \
+ && dnf module enable -y postgresql:13 \
  && dnf module enable -y mysql:8.0 \
  && dnf install -y \
     postgresql \
