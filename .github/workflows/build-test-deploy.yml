@@ -15,7 +15,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v4
 
       - name: Authenticate to DO Container Registry
         env:
@@ -36,7 +36,7 @@ jobs:
 
   #  steps:
   #    - name: Checkout
-  #      uses: actions/checkout@v5
+  #      uses: actions/checkout@v4
 
   #    - name: Test
   #      run: ./scripts/run-ci.sh
@@ -52,7 +52,7 @@ jobs:
 
   #  steps:
   #    - name: Checkout
-  #      uses: actions/checkout@v5
+  #      uses: actions/checkout@v4
 
   #    - name: Render Manifests
   #      run: ./scripts/deploy-release.sh --save-all --manifest-dir "manifests-${RELEASE_VERSION}-${ENV}" --debug
@@ -86,7 +86,7 @@ jobs:
 
   #  steps:
   #    - name: Checkout
-  #      uses: actions/checkout@v5
+  #      uses: actions/checkout@v4
 
   #    - name: Render Manifests
   #      run: ./scripts/deploy-release.sh --save-all --manifest-dir "manifests-${RELEASE_VERSION}-${ENV}" --debug
