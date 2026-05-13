@@ -1,8 +1,9 @@
 # db-snapshotter
 
-Simple script to dump a PostgreSQL or MariaDB database into a .sql.gz file,
-optionally encrypt it with AES-256, and upload it to object storage
-(S3 compatible, such as Backblaze).  Backup encryption is enabled by default.
+Simple script to dump a PostgreSQL or MariaDB database into a zstd-compressed
+`.sql.zst` file, optionally encrypt it with AES-256, and upload it to object
+storage (S3 compatible, such as Backblaze).  Backup encryption is enabled by
+default.
 
 ## Quick Start
 
@@ -156,8 +157,8 @@ kubectl create job --from="cronjob/${CRONJOB_NAME}" "${NEW_JOB_NAME}"
 
 ## Backup encryption
 
-`db-snapshotter` encrypts the gzipped dump with AES-256-CBC before uploading
-it to object storage.  The cipher key is derived from `ENCRYPTION_KEY` using
+`db-snapshotter` encrypts the zstd-compressed dump with AES-256-CBC before
+uploading it to object storage.  The cipher key is derived from `ENCRYPTION_KEY` using
 PBKDF2 (SHA-256, 100,000 iterations) with a random per-file salt, via
 `openssl enc -aes-256-cbc -salt -pbkdf2 -iter 100000`.
 
@@ -169,8 +170,8 @@ Encryption is controlled by two environment variables:
 | `ENCRYPTION_KEY`     | _none_  | The secret used to derive the AES-256 key.  **Required** when encryption is enabled; the job exits early if missing.   |
 
 When encryption is enabled the uploaded object is named
-`<service>_<database>_<timestamp>-{pgsql,mysql}.sql.gz.enc`.  When disabled
-it is the usual `.sql.gz`.
+`<service>_<database>_<timestamp>-{pgsql,mysql}.sql.zst.enc`.  When disabled
+it is the usual `.sql.zst`.
 
 ### Generating an encryption key
 
@@ -224,7 +225,7 @@ export ENCRYPTION_ENABLED='true'
 
 Set `ENCRYPTION_ENABLED='false'` in the `ConfigMap` (or unset
 `ENCRYPTION_KEY` and set the flag).  When disabled the job logs a warning
-and uploads the plain `.sql.gz` file.
+and uploads the plain `.sql.zst` file.
 
 ### Decrypting a backup
 
@@ -235,11 +236,11 @@ it with the same key:
 export ENCRYPTION_KEY='<the key used to create the backup>'
 
 openssl enc -d -aes-256-cbc -pbkdf2 -iter 100000 \
-  -in service_name_service_name_prod_2026-05-13-22-00-00-pgsql.sql.gz.enc \
-  -out service_name_service_name_prod_2026-05-13-22-00-00-pgsql.sql.gz \
+  -in service_name_service_name_prod_2026-05-13-22-00-00-pgsql.sql.zst.enc \
+  -out service_name_service_name_prod_2026-05-13-22-00-00-pgsql.sql.zst \
   -pass env:ENCRYPTION_KEY
 
-gunzip service_name_service_name_prod_2026-05-13-22-00-00-pgsql.sql.gz
+unzstd service_name_service_name_prod_2026-05-13-22-00-00-pgsql.sql.zst
 # Then restore via psql / mysql as usual.
 ```
 

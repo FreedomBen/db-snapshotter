@@ -4,11 +4,11 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this is
 
-`db-snapshotter` is a single-purpose container that dumps a PostgreSQL or MySQL database and uploads the gzipped dump to S3-compatible object storage. It is designed to run as a Kubernetes `Job` or `CronJob`. All logic lives in one bash script (`db-snapshot.sh`); the rest of the repo is packaging and deployment scaffolding.
+`db-snapshotter` is a single-purpose container that dumps a PostgreSQL or MySQL database and uploads the zstd-compressed dump to S3-compatible object storage. It is designed to run as a Kubernetes `Job` or `CronJob`. All logic lives in one bash script (`db-snapshot.sh`); the rest of the repo is packaging and deployment scaffolding.
 
 ## Architecture (one paragraph)
 
-`db-snapshot.sh` is the container entrypoint. `main()` calls `verify_credentials`, `mkdir /snapshot`, then dispatches to `backup-postgres` or `backup-mysql` based on the first letter of `DB_TYPE` (`p*` → postgres, `m*` → mysql — note the regex, not exact match). Each backup function: runs `pg_dump`/`mysqldump` → `gzip`s the file → `aws s3 cp --endpoint-url="${AWS_ENDPOINT_URL}"` to `s3://${BUCKET_NAME}/${PREFIX}/<file>`. Slack notifications fire on success/failure via helpers (`info`, `warn`, `slack_error`, `slack_success`) when `SLACK_API_TOKEN` is set. Error messages reference `/etc/podinfo/podname` and `/etc/podinfo/namespace`, so Kubernetes manifests must mount the [Downward API podinfo volume](https://kubernetes.io/docs/tasks/inject-data-application/downward-api-volume-expose-pod-information/) for the `kubectl logs` hint in Slack alerts to be accurate.
+`db-snapshot.sh` is the container entrypoint. `main()` calls `verify_credentials`, `mkdir /snapshot`, then dispatches to `backup-postgres` or `backup-mysql` based on the first letter of `DB_TYPE` (`p*` → postgres, `m*` → mysql — note the regex, not exact match). Each backup function: runs `pg_dump`/`mysqldump` → `zstd -T0 -19`s the file → `aws s3 cp --endpoint-url="${AWS_ENDPOINT_URL}"` to `s3://${BUCKET_NAME}/${PREFIX}/<file>`. Slack notifications fire on success/failure via helpers (`info`, `warn`, `slack_error`, `slack_success`) when `SLACK_API_TOKEN` is set. Error messages reference `/etc/podinfo/podname` and `/etc/podinfo/namespace`, so Kubernetes manifests must mount the [Downward API podinfo volume](https://kubernetes.io/docs/tasks/inject-data-application/downward-api-volume-expose-pod-information/) for the `kubectl logs` hint in Slack alerts to be accurate.
 
 Config split: non-secret values (`DB_TYPE`, `DB_PORT`, `DB_HOSTNAME` (host only — actually a secret in examples), `BUCKET_NAME`, `AWS_ENDPOINT_URL`, `TARGET_DATABASE`, `PREFIX`, `SERVICE_NAME`, `SLACK_CHANNEL_*`) go into a `ConfigMap`; secrets (`DB_USERNAME`, `DB_PASSWORD`, `DB_HOSTNAME`, `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `SLACK_API_TOKEN`) go into a `Secret`. Both are loaded via `envFrom` on the Pod. See `k8s/example/` for canonical manifests.
 
@@ -33,9 +33,9 @@ There is no test suite, no linter, no Makefile. If you add lint/tests, wire them
 ## Editing the snapshot script
 
 - The `DB_TYPE` dispatch matches by **first letter only** (`[[ "$DB_TYPE" =~ ^[m] ]]`). `mongodb` or `mssql` would silently route to MySQL. If you add a new DB engine, change the dispatch.
-- Output filename format: `${SERVICE_NAME}_${TARGET_DATABASE}_$(date '+%Y-%m-%d-%H-%M-%S')-{pgsql,mysql}.sql` then `.gz` after compression. Backup consumers depend on this pattern.
+- Output filename format: `${SERVICE_NAME}_${TARGET_DATABASE}_$(date '+%Y-%m-%d-%H-%M-%S')-{pgsql,mysql}.sql` then `.zst` after compression. Backup consumers depend on this pattern.
 - The script `cd /snapshot` before dumping; the image creates that directory at build time and `chown`s it to the `docker` user (UID 1000) the container runs as.
-- `gzip` is used despite `zstd` being installed in the image — files are `.sql.gz`, not `.zst`.
+- `zstd -T0 -19 --rm` is used for compression (multi-threaded, level 19, removes the source `.sql` on success). Output is `.sql.zst`. The image installs `zstd` directly; `gzip` is no longer used.
 
 ## Notes for changes
 

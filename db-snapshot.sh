@@ -177,7 +177,7 @@ backup-mysql ()
 
   local sql_file
   sql_file="${SERVICE_NAME}_${TARGET_DATABASE}_$(date '+%Y-%m-%d-%H-%M-%S')-mysql.sql"
-  local output_file="${sql_file}.gz"
+  local output_file="${sql_file}.zst"
   # Pass the password via MYSQL_PWD so it does not appear in the process list.
   export MYSQL_PWD="${DB_PASSWORD}"
 
@@ -203,7 +203,7 @@ backup-mysql ()
   size="$(file_size "${sql_file}")"
   info "mysqldump to file '${sql_file}' is complete.  Total uncompressed size is: ${size}"
 
-  gzip "${sql_file}"
+  zstd -T0 -19 --rm "${sql_file}"
   size="$(file_size "${output_file}")"
   info "Compression of mysqldump file '${output_file}' is complete.  Total compressed size is: ${size}"
 
@@ -226,7 +226,7 @@ backup-postgres ()
 
   local sql_file
   sql_file="${SERVICE_NAME}_${TARGET_DATABASE}_$(date '+%Y-%m-%d-%H-%M-%S')-pgsql.sql"
-  local output_file="${sql_file}.gz"
+  local output_file="${sql_file}.zst"
   export PGPASSWORD="${DB_PASSWORD}"
 
   info "Dumping database to file '${sql_file}'"
@@ -250,7 +250,7 @@ backup-postgres ()
   size="$(file_size "${sql_file}")"
   info "pg_dump to file '${sql_file}' is complete.  Total uncompressed size is: ${size}"
 
-  gzip "${sql_file}"
+  zstd -T0 -19 --rm "${sql_file}"
   size="$(file_size "${output_file}")"
   info "Compression of pg_dump file '${output_file}' is complete.  Total compressed size is: ${size}"
 
