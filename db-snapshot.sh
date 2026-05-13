@@ -124,15 +124,6 @@ slack_info ()
   send_slack_message "${SLACK_CHANNEL_INFO}" ":information_source:  ${1}"
 }
 
-aws_endpoint_url ()
-{
-  if [ -n "${AWS_ENDPOINT_URL}" ]; then
-    echo "--endpoint '${AWS_ENDPOINT_URL}'"
-  else
-    echo ""
-  fi
-}
-
 file_size ()
 {
   du -hs "${1}" | awk '{ print $1 }'
