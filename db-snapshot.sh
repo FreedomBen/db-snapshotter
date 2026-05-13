@@ -14,6 +14,11 @@
 # DB_HOSTNAME: '<redacted>'
 # AWS_ACCESS_KEY_ID: '<redacted>'
 # AWS_SECRET_ACCESS_KEY: '<redacted>'
+#
+# Backup encryption (enabled by default):
+# ENCRYPTION_ENABLED='true'  # set to 'false'/'0'/'no'/'off'/'disabled' to disable
+# ENCRYPTION_KEY='<key>'     # required when encryption is enabled.  See README for
+                             # instructions on generating a strong key.
 
 
 # To use Slack integration, set:
@@ -129,6 +134,43 @@ file_size ()
   du -hs "${1}" | awk '{ print $1 }'
 }
 
+encryption_enabled ()
+{
+  # Default to enabled when ENCRYPTION_ENABLED is unset
+  case "${ENCRYPTION_ENABLED:-true}" in
+    false|False|FALSE|0|no|No|NO|off|Off|OFF|disabled|Disabled|DISABLED)
+      return 1
+      ;;
+    *)
+      return 0
+      ;;
+  esac
+}
+
+encrypt_file ()
+{
+  local input_file="${1}"
+  local output_file="${2}"
+
+  info "Encrypting '${input_file}' with AES-256-CBC -> '${output_file}'"
+  # -pass env:ENCRYPTION_KEY keeps the key off the process command line.
+  # -pbkdf2 + -iter derives the AES key from ENCRYPTION_KEY via PBKDF2.
+  openssl enc -aes-256-cbc -salt -pbkdf2 -iter 100000 \
+    -in "${input_file}" \
+    -out "${output_file}" \
+    -pass env:ENCRYPTION_KEY 2> opensslstderr.log
+  local retval="$?"
+
+  if [ "${retval}" != '0' ]; then
+    local opensslstderr
+    opensslstderr="$(cat opensslstderr.log)"
+    die "openssl encryption exited with status '${retval}': \`\`\`${opensslstderr}\`\`\`"
+  fi
+
+  # Remove the unencrypted source so only the encrypted artifact remains on disk
+  rm -f "${input_file}"
+}
+
 backup-mysql ()
 {
   debug "Backing up mysql database"
@@ -164,6 +206,14 @@ backup-mysql ()
   gzip "${sql_file}"
   size="$(file_size "${output_file}")"
   info "Compression of mysqldump file '${output_file}' is complete.  Total compressed size is: ${size}"
+
+  if encryption_enabled; then
+    local encrypted_file="${output_file}.enc"
+    encrypt_file "${output_file}" "${encrypted_file}"
+    output_file="${encrypted_file}"
+    size="$(file_size "${output_file}")"
+    info "Encryption of file '${output_file}' is complete.  Total encrypted size is: ${size}"
+  fi
 
   # Upload file to destination bucket
   upload_file_to_bucket "${output_file}" "${size}"
@@ -204,6 +254,14 @@ backup-postgres ()
   size="$(file_size "${output_file}")"
   info "Compression of pg_dump file '${output_file}' is complete.  Total compressed size is: ${size}"
 
+  if encryption_enabled; then
+    local encrypted_file="${output_file}.enc"
+    encrypt_file "${output_file}" "${encrypted_file}"
+    output_file="${encrypted_file}"
+    size="$(file_size "${output_file}")"
+    info "Encryption of file '${output_file}' is complete.  Total encrypted size is: ${size}"
+  fi
+
   # Upload file to destination bucket
   upload_file_to_bucket "${output_file}" "${size}"
   return "$?"
@@ -241,6 +299,15 @@ verify_credentials ()
     die "AWS_ACCESS_KEY_ID is not set.  Must be set"
   elif [ -z "${AWS_ENDPOINT_URL}" ]; then
     warn "AWS_ENDPOINT_URL is not set.  Assuming default"
+  fi
+
+  if encryption_enabled; then
+    if [ -z "${ENCRYPTION_KEY}" ]; then
+      die "Encryption is enabled but ENCRYPTION_KEY is not set.  Set ENCRYPTION_KEY, or set ENCRYPTION_ENABLED=false to disable encryption."
+    fi
+    info "Backup encryption is enabled (AES-256-CBC)."
+  else
+    warn "Backup encryption is disabled (ENCRYPTION_ENABLED='${ENCRYPTION_ENABLED}').  Backups will be uploaded unencrypted."
   fi
 }
 

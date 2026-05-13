@@ -12,6 +12,7 @@ RUN dnf update -y \
     zip unzip \
     zstd \
     jq \
+    openssl \
  && dnf module enable -y postgresql:16 \
  && dnf module enable -y mysql:8.0 \
  && dnf install -y \
