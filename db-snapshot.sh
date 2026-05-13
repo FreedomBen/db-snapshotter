@@ -31,7 +31,7 @@ START_TIME_SEC="$(date '+%s')"
 
 runtime_seconds ()
 {
-  echo $(( $(date '+%s') - $START_TIME_SEC ))
+  echo $(( $(date '+%s') - START_TIME_SEC ))
 }
 
 die ()
@@ -131,14 +131,15 @@ aws_endpoint_url ()
 
 file_size ()
 {
-  echo "$(du -hs "${1}" | awk '{ print $1 }')"
+  du -hs "${1}" | awk '{ print $1 }'
 }
 
 backup-mysql ()
 {
   debug "Backing up mysql database"
 
-  local sql_file="${SERVICE_NAME}_${TARGET_DATABASE}_$(date '+%Y-%m-%d-%H-%M-%S')-mysql.sql"
+  local sql_file
+  sql_file="${SERVICE_NAME}_${TARGET_DATABASE}_$(date '+%Y-%m-%d-%H-%M-%S')-mysql.sql"
   local output_file="${sql_file}.gz"
 
   info "Dumping database to file '${sql_file}'"
@@ -151,14 +152,16 @@ backup-mysql ()
 
   debug "mysqldump retval is '${retval}'"
 
-  local mysqlstderr="$(cat mysqlstderr.log)"
+  local mysqlstderr
+  mysqlstderr="$(cat mysqlstderr.log)"
   info "mysqldump output: ${mysqlstderr}"
 
   if [ "${retval}" != '0' ]; then
     die "Check logs with: \`\`\`kubectl logs $(cat /etc/podinfo/podname) -n $(cat /etc/podinfo/namespace)\`\`\` mysqldump exited with status '${retval}': \`\`\`${mysqlstderr}\`\`\`"
   fi
 
-  local size="$(file_size "${sql_file}")"
+  local size
+  size="$(file_size "${sql_file}")"
   info "mysqldump to file '${sql_file}' is complete.  Total uncompressed size is: ${size}"
 
   gzip "${sql_file}"
@@ -174,7 +177,8 @@ backup-postgres ()
 {
   debug "Backing up postgres database"
 
-  local sql_file="${SERVICE_NAME}_${TARGET_DATABASE}_$(date '+%Y-%m-%d-%H-%M-%S')-pgsql.sql"
+  local sql_file
+  sql_file="${SERVICE_NAME}_${TARGET_DATABASE}_$(date '+%Y-%m-%d-%H-%M-%S')-pgsql.sql"
   local output_file="${sql_file}.gz"
   export PGPASSWORD="${DB_PASSWORD}"
 
@@ -187,14 +191,16 @@ backup-postgres ()
 
   debug "pg_dump retval is '${retval}'"
 
-  local pgstderr="$(cat pgstderr.log)"
+  local pgstderr
+  pgstderr="$(cat pgstderr.log)"
   info "pg_dump output: ${pgstderr}"
 
   if [ "${retval}" != '0' ]; then
     die "Check logs with: \`\`\`kubectl logs $(cat /etc/podinfo/podname) -n $(cat /etc/podinfo/namespace)\`\`\` pg_dump exited with status '${retval}': \`\`\`${pgstderr}\`\`\`"
   fi
 
-  local size="$(file_size "${sql_file}")"
+  local size
+  size="$(file_size "${sql_file}")"
   info "pg_dump to file '${sql_file}' is complete.  Total uncompressed size is: ${size}"
 
   gzip "${sql_file}"
@@ -246,7 +252,7 @@ main ()
   mkdir -p /snapshot
 
   debug "Changing directory to /snapshot"
-  cd /snapshot
+  cd /snapshot || die "Could not cd to /snapshot"
 
   # The first letter is what matters.  supports "mysql" or "postgres"
   debug "Checking database type"
