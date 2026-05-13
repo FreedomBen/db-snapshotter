@@ -87,7 +87,11 @@ send_slack_message ()
     curl \
       --silent \
       --show-error \
-      --data "token=${SLACK_API_TOKEN}&channel=${1}&text=${2}&username=$(slack_username)&icon_emoji=$(slack_icon_emoji)" \
+      --data-urlencode "token=${SLACK_API_TOKEN}" \
+      --data-urlencode "channel=${1}" \
+      --data-urlencode "text=${2}" \
+      --data-urlencode "username=$(slack_username)" \
+      --data-urlencode "icon_emoji=$(slack_icon_emoji)" \
       'https://slack.com/api/chat.postMessage'
     echo # add a new-line to the output so it's easier to read the logs
   else
