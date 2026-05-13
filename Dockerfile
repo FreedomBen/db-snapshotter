@@ -1,4 +1,4 @@
-FROM almalinux:8.10
+FROM almalinux:10.1
 
 RUN groupadd --gid 1000 docker \
  && useradd --uid 1000 --gid 1000 --groups docker docker \
@@ -13,8 +13,6 @@ RUN dnf update -y \
     zstd \
     jq \
     openssl \
- && dnf module enable -y postgresql:16 \
- && dnf module enable -y mysql:8.0 \
  && dnf install -y \
     postgresql \
     mariadb \
