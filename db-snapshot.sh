@@ -266,6 +266,8 @@ main ()
   elif [[ "$DB_TYPE" =~ ^[p] ]]; then
     info "Database type is PostgreSQL"
     backup-postgres
+  else
+    die "Unknown DB_TYPE '${DB_TYPE}'.  Must start with 'm' (mysql) or 'p' (postgres)."
   fi
 }
 
