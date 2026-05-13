@@ -213,8 +213,12 @@ upload_file_to_bucket ()
   local size="${2}"
 
   # Upload file to destination bucket
-  info "Uploading to endpoint '${AWS_ENDPOINT_URL}', bucket '${BUCKET_NAME}', key '${PREFIX}/${output_file}'"
-  aws s3 cp --endpoint-url="${AWS_ENDPOINT_URL}" "${output_file}" "s3://${BUCKET_NAME}/${PREFIX}/${output_file}"
+  info "Uploading to endpoint '${AWS_ENDPOINT_URL:-<default>}', bucket '${BUCKET_NAME}', key '${PREFIX}/${output_file}'"
+  if [ -n "${AWS_ENDPOINT_URL}" ]; then
+    aws s3 cp --endpoint-url="${AWS_ENDPOINT_URL}" "${output_file}" "s3://${BUCKET_NAME}/${PREFIX}/${output_file}"
+  else
+    aws s3 cp "${output_file}" "s3://${BUCKET_NAME}/${PREFIX}/${output_file}"
+  fi
 
   local retval="$?"
   info "Upload completed with exit code '${retval}'"
