@@ -136,13 +136,15 @@ backup-mysql ()
   local sql_file
   sql_file="${SERVICE_NAME}_${TARGET_DATABASE}_$(date '+%Y-%m-%d-%H-%M-%S')-mysql.sql"
   local output_file="${sql_file}.gz"
+  # Pass the password via MYSQL_PWD so it does not appear in the process list.
+  export MYSQL_PWD="${DB_PASSWORD}"
 
   info "Dumping database to file '${sql_file}'"
   slack_info "Beginning dump of database '${TARGET_DATABASE}' at $(date)"
 
   # Dump to a file
   info "Dumping database at: '${DB_HOSTNAME}'"
-  mysqldump "${TARGET_DATABASE}" -h "${DB_HOSTNAME}" -P "${DB_PORT}" -u "${DB_USERNAME}" -p"${DB_PASSWORD}" > "${sql_file}" 2> mysqlstderr.log
+  mysqldump "${TARGET_DATABASE}" -h "${DB_HOSTNAME}" -P "${DB_PORT}" -u "${DB_USERNAME}" > "${sql_file}" 2> mysqlstderr.log
   local retval="$?"
 
   debug "mysqldump retval is '${retval}'"
