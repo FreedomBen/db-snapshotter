@@ -7,11 +7,9 @@ else
   echo "RELEASE_VERSION already set to '${RELEASE_VERSION}'"
 fi
 
-# Skip tests for now
-echo 'Skipping tests!'
-exit 0
+REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
-docker run --rm  \
-  "docker.io/freedomben/db-snapshotter:${RELEASE_VERSION}" \
-  mix test
+cd "${REPO_ROOT}" || exit 1
+echo "Running bats test suite (cwd: ${REPO_ROOT})"
+make test
 

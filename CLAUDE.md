@@ -16,15 +16,18 @@ The Docker image is `almalinux:10.1` + the `postgresql` (16.x) and `mariadb` (10
 
 ## Common commands
 
-| Task | Command |
-|---|---|
-| Build the release image (tags both `:${RELEASE_VERSION}` and `:latest`; defaults to `git rev-parse HEAD`) | `./scripts/build-release.sh` |
-| Push the release image | `./scripts/push-release.sh` |
-| Build dev image (`db-snapshotter-dev:latest`) | `./scripts/build-dev.sh` |
-| Run dev image with an interactive bash shell (for poking at the toolchain) | `./scripts/run-dev.sh` |
-| "CI test" — currently a no-op stub (`echo 'Skip tests for now'`) | `./scripts/run-ci.sh` |
+| Task                                                                                                  | Command                       |
+| ----------------------------------------------------------------------------------------------------- | ----------------------------- |
+| Build the release image (tags both `:${RELEASE_VERSION}` and `:latest`; defaults to `git rev-parse HEAD`) | `./scripts/build-release.sh`  |
+| Push the release image                                                                                | `./scripts/push-release.sh`   |
+| Build dev image (`db-snapshotter-dev:latest`)                                                         | `./scripts/build-dev.sh`      |
+| Run dev image with an interactive bash shell (for poking at the toolchain)                            | `./scripts/run-dev.sh`        |
+| Run the bats test suite                                                                               | `make test`                   |
+| Run shellcheck against `db-snapshot.sh`                                                               | `make lint`                   |
+| Show all make targets                                                                                 | `make help`                   |
+| CI entrypoint (invokes `make test`)                                                                   | `./scripts/run-ci.sh`         |
 
-There is no test suite, no linter, no Makefile. If you add lint/tests, wire them through `scripts/run-ci.sh` so the (currently commented-out) `test` job in `.github/workflows/build-test-deploy.yml` can pick them up.
+Tests live in `tests/*.bats` and rely on bats-core plus shellcheck on the PATH. The harness in `tests/test_helper.bash` prepends a per-test `bin/` to PATH and drops in stubs for `pg_dump`, `mysqldump`, `aws`, `curl`, `zstd`, and `openssl` — each stub appends its args and a snapshot of `env` under `${STUB_LOG}` so tests can assert on argv and exported vars (e.g. `PGPASSWORD`, `MYSQL_PWD`). The `test` job in `.github/workflows/build-test-deploy.yml` is still commented out; un-comment it once you're ready to gate CI on `make test`.
 
 ## CI / release flow
 
@@ -34,8 +37,10 @@ There is no test suite, no linter, no Makefile. If you add lint/tests, wire them
 
 - The `DB_TYPE` dispatch matches by **first letter only** (`[[ "$DB_TYPE" =~ ^[m] ]]`). `mongodb` or `mssql` would silently route to MySQL. If you add a new DB engine, change the dispatch.
 - Output filename format: `${SERVICE_NAME}_${TARGET_DATABASE}_$(date '+%Y-%m-%d-%H-%M-%S')-{pgsql,mysql}.sql` then `.zst` after compression. Backup consumers depend on this pattern.
-- The script `cd /snapshot` before dumping; the image creates that directory at build time and `chown`s it to the `docker` user (UID 1000) the container runs as.
+- The script `cd "${SNAPSHOT_DIR}"` (default `/snapshot`) before dumping; the image creates `/snapshot` at build time and `chown`s it to the `docker` user (UID 1000) the container runs as. Override `SNAPSHOT_DIR` when running outside the standard image (tests rely on this).
+- The Kubernetes downward-API mount path is read from `PODINFO_DIR` (default `/etc/podinfo`); the script `cat`s `${PODINFO_DIR}/podname` and `${PODINFO_DIR}/namespace` into Slack failure messages.
 - `zstd -T0 -19 --rm` is used for compression (multi-threaded, level 19, removes the source `.sql` on success). Output is `.sql.zst`. The image installs `zstd` directly; `gzip` is no longer used.
+- `main "$@"` is gated behind `[[ "${BASH_SOURCE[0]}" == "${0}" ]]` so the file can be sourced (e.g. by bats tests) without auto-running.
 
 ## Notes for changes
 

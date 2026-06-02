@@ -32,6 +32,13 @@
 # SLACK_ICON_EMOJI=':database:'
 
 
+# Path overrides (rarely set in production; mainly for tests and unusual deployments)
+# SNAPSHOT_DIR:  directory the dump is written to before upload (default: /snapshot)
+# PODINFO_DIR:   downward-API mount whose `podname` and `namespace` files are
+#                interpolated into Slack error messages (default: /etc/podinfo)
+SNAPSHOT_DIR="${SNAPSHOT_DIR:-/snapshot}"
+PODINFO_DIR="${PODINFO_DIR:-/etc/podinfo}"
+
 START_TIME_SEC="$(date '+%s')"
 
 runtime_seconds ()
@@ -196,7 +203,7 @@ backup-mysql ()
   info "mysqldump output: ${mysqlstderr}"
 
   if [ "${retval}" != '0' ]; then
-    die "Check logs with: \`\`\`kubectl logs $(cat /etc/podinfo/podname) -n $(cat /etc/podinfo/namespace)\`\`\` mysqldump exited with status '${retval}': \`\`\`${mysqlstderr}\`\`\`"
+    die "Check logs with: \`\`\`kubectl logs $(cat "${PODINFO_DIR}/podname") -n $(cat "${PODINFO_DIR}/namespace")\`\`\` mysqldump exited with status '${retval}': \`\`\`${mysqlstderr}\`\`\`"
   fi
 
   local size
@@ -243,7 +250,7 @@ backup-postgres ()
   info "pg_dump output: ${pgstderr}"
 
   if [ "${retval}" != '0' ]; then
-    die "Check logs with: \`\`\`kubectl logs $(cat /etc/podinfo/podname) -n $(cat /etc/podinfo/namespace)\`\`\` pg_dump exited with status '${retval}': \`\`\`${pgstderr}\`\`\`"
+    die "Check logs with: \`\`\`kubectl logs $(cat "${PODINFO_DIR}/podname") -n $(cat "${PODINFO_DIR}/namespace")\`\`\` pg_dump exited with status '${retval}': \`\`\`${pgstderr}\`\`\`"
   fi
 
   local size
@@ -285,7 +292,7 @@ upload_file_to_bucket ()
   if [ "${retval}" = '0' ]; then
     slack_success "Backup of database '${TARGET_DATABASE}' succeeded at $(date) after running for $(runtime_seconds) seconds.  Total size: ${size}."
   else
-    slack_error "Backup of database '${TARGET_DATABASE}' dumped successful but uploading to object storage failed at $(date) after running for $(runtime_seconds) seconds.  Check logs with: \`\`\`kubectl logs $(cat /etc/podinfo/podname) -n $(cat /etc/podinfo/namespace)\`\`\`"
+    slack_error "Backup of database '${TARGET_DATABASE}' dumped successful but uploading to object storage failed at $(date) after running for $(runtime_seconds) seconds.  Check logs with: \`\`\`kubectl logs $(cat "${PODINFO_DIR}/podname") -n $(cat "${PODINFO_DIR}/namespace")\`\`\`"
   fi
   echo # flush slack output \n
   return "${retval}"
@@ -316,11 +323,11 @@ main ()
   debug "Verifying that we have credentials"
   verify_credentials
 
-  debug "Making output directory /snapshot"
-  mkdir -p /snapshot
+  debug "Making output directory ${SNAPSHOT_DIR}"
+  mkdir -p "${SNAPSHOT_DIR}"
 
-  debug "Changing directory to /snapshot"
-  cd /snapshot || die "Could not cd to /snapshot"
+  debug "Changing directory to ${SNAPSHOT_DIR}"
+  cd "${SNAPSHOT_DIR}" || die "Could not cd to ${SNAPSHOT_DIR}"
 
   # The first letter is what matters.  supports "mysql" or "postgres"
   debug "Checking database type"
@@ -335,4 +342,7 @@ main ()
   fi
 }
 
-main "$@"
+# Only run main when this script is executed directly, not when sourced (e.g. by tests).
+if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+  main "$@"
+fi

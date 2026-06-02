@@ -16,11 +16,15 @@ GitHub Actions configuration is in `.github/workflows/`.
 - `./scripts/run-dev.sh`: open an interactive shell inside the dev image.
 - `./scripts/build-release.sh`: build release and `latest` image tags; set
   `RELEASE_VERSION` to override the default commit-derived tag.
-- `./scripts/run-ci.sh`: current CI placeholder; it prints that tests are
-  skipped and exits successfully.
+- `make test`: run the bats test suite against `db-snapshot.sh`.
+- `make lint`: run shellcheck on `db-snapshot.sh`.
+- `make help`: show available make targets.
+- `./scripts/run-ci.sh`: CI entrypoint; invokes `make test`.
 
 Run scripts from the repository root. Docker must be available for image
-builds and local container validation.
+builds and local container validation. `bats` (>=1.5) and `shellcheck` must be
+on the PATH for the test and lint targets; `make bats-install` vendors
+bats-core if a system install is unavailable.
 
 ## Coding Style & Naming Conventions
 
@@ -32,11 +36,19 @@ indented and quote environment variable values consistently.
 
 ## Testing Guidelines
 
-There is no active automated test suite yet; the CI script currently skips
-tests. For behavior changes, validate by building the image and running against
-a disposable database and non-production object storage bucket. When adding
-test infrastructure, cover both PostgreSQL and MySQL/MariaDB paths, upload
-success and failure handling, and Slack notification branches where practical.
+Automated tests live under `tests/` and run with bats-core. They stub the
+external binaries (`pg_dump`, `mysqldump`, `aws`, `curl`, `zstd`, `openssl`)
+via a PATH-prepended `bin/` so the suite never contacts a real database or
+S3 endpoint. `db-snapshot.sh` is sourced (its `main` is gated behind a
+`BASH_SOURCE` check) so individual functions can be exercised in isolation.
+Test fixtures live in `tests/test_helper.bash`; per-test paths are overridden
+via `SNAPSHOT_DIR` and `PODINFO_DIR`.
+
+Run the suite with `make test`. For behavior changes that depend on real
+client/server protocol details (e.g. bumping the postgres client version),
+also validate against a disposable database and non-production bucket. Add
+tests alongside any change to dispatch, dump invocation, upload arguments,
+encryption, or Slack notification branches.
 
 ## Commit & Pull Request Guidelines
 
