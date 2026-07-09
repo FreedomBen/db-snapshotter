@@ -12,7 +12,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Config split: non-secret values (`DB_TYPE`, `DB_PORT`, `DB_HOSTNAME` (host only — actually a secret in examples), `BUCKET_NAME`, `AWS_ENDPOINT_URL`, `TARGET_DATABASE`, `PREFIX`, `SERVICE_NAME`, `SLACK_CHANNEL_*`) go into a `ConfigMap`; secrets (`DB_USERNAME`, `DB_PASSWORD`, `DB_HOSTNAME`, `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `SLACK_API_TOKEN`) go into a `Secret`. Both are loaded via `envFrom` on the Pod. See `k8s/example/` for canonical manifests.
 
-The Docker image is `almalinux:10.1` + the `postgresql` (16.x) and `mariadb` (10.11) client packages + the AWS CLI v2 installed from the official zip. Built and pushed to `docker.io/freedomben/db-snapshotter`.
+The Docker image is `almalinux:10.1` + the PGDG `postgresql18` client (18.x from the PGDG EL-10 repo, installed to `/usr/pgsql-18/bin` which is prepended to `PATH` — the AppStream `postgresql` package is 16.x and `pg_dump` refuses servers newer than itself, while the CNPG clusters run PG 18) and `mariadb` (10.11) client packages + the AWS CLI v2 installed from the official zip. Built and pushed to `docker.io/freedomben/db-snapshotter`.
 
 ## Common commands
 
@@ -44,7 +44,7 @@ Tests live in `tests/*.bats` and rely on bats-core plus shellcheck on the PATH. 
 
 ## Notes for changes
 
-- Bumping the postgres/mysql client versions: AlmaLinux 10 ships `postgresql` (16.x) and `mariadb` (10.11) directly in AppStream — no DNF modules involved. To pin a different major, change the package name (e.g. `postgresql16` → `postgresql17` once available) or add a third-party repo. The client version must be `>=` the server version, or `pg_dump` will refuse to run against a newer server. Note that `mariadb` is used as the MySQL client; for strict MySQL 8.x compatibility, consider switching to the `mysql8.4` package.
+- Bumping the postgres client version: the psql/pg_dump client comes from the PGDG EL-10 repo (`pgdg-redhat-repo-latest.noarch.rpm`), currently `postgresql18`. To move majors, change the package name (`postgresql18` → `postgresql19`) AND the `/usr/pgsql-18/bin` PATH entry in the Dockerfile. The client version must be `>=` the server version, or `pg_dump` will refuse to run against a newer server. `mariadb` (10.11) still comes from AppStream and is used as the MySQL client; for strict MySQL 8.x compatibility, consider switching to the `mysql8.4` package.
 - Kubernetes manifests in `k8s/example/` still use `apiVersion: batch/v1beta1` for the CronJob (commented marker says "use batch/v1 once on k8s 1.21"). Anyone deploying on modern clusters needs to switch to `batch/v1`.
 - The `freedomben/db-snapshotter` Docker Hub image is the public artifact; the commented CI also pushes to a DigitalOcean private registry via the `DOCKER_CONFIG` secret.
 

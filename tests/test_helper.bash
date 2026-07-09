@@ -133,11 +133,8 @@ STUB
   chmod +x "${path}"
 }
 
-# Source db-snapshot.sh without auto-invoking main(), and shadow `sleep` so
-# die()'s 8-hour stall doesn't hang the test suite.
+# Source db-snapshot.sh without auto-invoking main().
 source_script() {
-  # shellcheck disable=SC2317
-  sleep() { :; }
   # shellcheck disable=SC1090
   source "${SCRIPT_PATH}"
 }
