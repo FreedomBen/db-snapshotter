@@ -38,15 +38,26 @@ setup() {
   [[ "${args}" != *"testpass"* ]]
 }
 
-@test "backup-postgres compresses with zstd -T0 -19 --rm" {
+@test "backup-postgres compresses with zstd -T0 -19 --rm by default" {
   run backup-postgres
   [ "${status}" -eq 0 ]
 
   local args
   args="$(stub_args zstd)"
   [[ "${args}" == *"-T0"* ]]
-  [[ "${args}" == *"-19"* ]]
+  [[ " ${args} " == *" -19 "* ]]
   [[ "${args}" == *"--rm"* ]]
+}
+
+@test "backup-postgres honors ZSTD_LEVEL" {
+  export ZSTD_LEVEL=7
+  run backup-postgres
+  [ "${status}" -eq 0 ]
+
+  local args
+  args="$(stub_args zstd)"
+  [[ " ${args} " == *" -7 "* ]]
+  [[ " ${args} " != *" -19 "* ]]
 }
 
 @test "backup-postgres produces filename <service>_<db>_<timestamp>-pgsql.sql.zst" {

@@ -32,15 +32,26 @@ setup() {
   [ "$(stub_env_value mysqldump MYSQL_PWD)" = "testpass" ]
 }
 
-@test "backup-mysql compresses with zstd -T0 -19 --rm" {
+@test "backup-mysql compresses with zstd -T0 -19 --rm by default" {
   run backup-mysql
   [ "${status}" -eq 0 ]
 
   local args
   args="$(stub_args zstd)"
   [[ "${args}" == *"-T0"* ]]
-  [[ "${args}" == *"-19"* ]]
+  [[ " ${args} " == *" -19 "* ]]
   [[ "${args}" == *"--rm"* ]]
+}
+
+@test "backup-mysql honors ZSTD_LEVEL" {
+  export ZSTD_LEVEL=7
+  run backup-mysql
+  [ "${status}" -eq 0 ]
+
+  local args
+  args="$(stub_args zstd)"
+  [[ " ${args} " == *" -7 "* ]]
+  [[ " ${args} " != *" -19 "* ]]
 }
 
 @test "backup-mysql produces filename <service>_<db>_<timestamp>-mysql.sql.zst" {

@@ -34,6 +34,10 @@ For backup encryption (enabled by default):
 - `ENCRYPTION_ENABLED: 'true'`  — set to `'false'` (or `0`/`no`/`off`/`disabled`) to upload unencrypted backups.  Defaults to `'true'` when unset.
 - `ENCRYPTION_KEY: '<key>'`     — required when `ENCRYPTION_ENABLED` is `'true'`.  See [Generating an encryption key](#generating-an-encryption-key) below.
 
+For compression:
+
+- `ZSTD_LEVEL: '19'` — zstd compression level, an integer from `1` (fastest) to `19` (smallest, the default).  The job exits early on an invalid value.  Level 19 on a multi-GB dump can take hours; around `10` is several times faster for a modestly larger file.
+
 Optionally, to enable notifications over Slack, set:
 
 - `SLACK_API_TOKEN:  '<token>'`
@@ -90,6 +94,7 @@ data:
   PREFIX: 'daily'
   SERVICE_NAME: 'service_name'
   ENCRYPTION_ENABLED: 'true'                          # set to 'false' to skip AES-256 encryption
+  ZSTD_LEVEL: '19'                                    # zstd level 1 (fastest) to 19 (smallest, default)
   SLACK_CHANNEL_INFO: '#infra-info'                   # channel to send info messages to
   SLACK_CHANNEL_ERROR: '#infra-error'                 # channel to send error messages to
   SLACK_CHANNEL_SUCCESS: '#infra-info'                # channel to send success messages to

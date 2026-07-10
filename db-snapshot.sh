@@ -19,6 +19,12 @@
 # ENCRYPTION_ENABLED='true'  # set to 'false'/'0'/'no'/'off'/'disabled' to disable
 # ENCRYPTION_KEY='<key>'     # required when encryption is enabled.  See README for
                              # instructions on generating a strong key.
+#
+# Compression:
+# ZSTD_LEVEL='19'            # zstd level, integer 1 (fastest) to 19 (smallest,
+                             # the default).  Level 19 on a multi-GB dump can take
+                             # hours; ~10 is several times faster for a modestly
+                             # larger file.
 
 
 # To use Slack integration, set:
@@ -38,6 +44,7 @@
 #                interpolated into Slack error messages (default: /etc/podinfo)
 SNAPSHOT_DIR="${SNAPSHOT_DIR:-/snapshot}"
 PODINFO_DIR="${PODINFO_DIR:-/etc/podinfo}"
+ZSTD_LEVEL="${ZSTD_LEVEL:-19}"
 
 START_TIME_SEC="$(date '+%s')"
 
@@ -209,7 +216,7 @@ backup-mysql ()
   size="$(file_size "${sql_file}")"
   info "mysqldump to file '${sql_file}' is complete.  Total uncompressed size is: ${size}"
 
-  zstd -T0 -19 --rm "${sql_file}"
+  zstd -T0 "-${ZSTD_LEVEL}" --rm "${sql_file}"
   size="$(file_size "${output_file}")"
   info "Compression of mysqldump file '${output_file}' is complete.  Total compressed size is: ${size}"
 
@@ -256,7 +263,7 @@ backup-postgres ()
   size="$(file_size "${sql_file}")"
   info "pg_dump to file '${sql_file}' is complete.  Total uncompressed size is: ${size}"
 
-  zstd -T0 -19 --rm "${sql_file}"
+  zstd -T0 "-${ZSTD_LEVEL}" --rm "${sql_file}"
   size="$(file_size "${output_file}")"
   info "Compression of pg_dump file '${output_file}' is complete.  Total compressed size is: ${size}"
 
@@ -297,6 +304,21 @@ upload_file_to_bucket ()
   return "${retval}"
 }
 
+verify_zstd_level ()
+{
+  case "${ZSTD_LEVEL}" in
+    ''|*[!0-9]*)
+      die "ZSTD_LEVEL '${ZSTD_LEVEL}' is not a positive integer.  Must be 1 (fastest) to 19 (smallest)."
+      ;;
+  esac
+
+  if [ "${ZSTD_LEVEL}" -lt 1 ] || [ "${ZSTD_LEVEL}" -gt 19 ]; then
+    die "ZSTD_LEVEL '${ZSTD_LEVEL}' is out of range.  Must be 1 (fastest) to 19 (smallest)."
+  fi
+
+  info "zstd compression level is ${ZSTD_LEVEL}"
+}
+
 verify_credentials ()
 {
   if [ -z "${AWS_SECRET_ACCESS_KEY}" ]; then
@@ -321,6 +343,9 @@ main ()
 {
   debug "Verifying that we have credentials"
   verify_credentials
+
+  debug "Verifying the zstd compression level"
+  verify_zstd_level
 
   debug "Making output directory ${SNAPSHOT_DIR}"
   mkdir -p "${SNAPSHOT_DIR}"

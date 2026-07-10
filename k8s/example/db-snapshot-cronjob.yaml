@@ -59,6 +59,7 @@ data:
   SLACK_USERNAME: 'DB Snapshot for malan prod' # optional username to post as
   SLACK_ICON_EMOJI: ':database:'               # optional emoji to use for avatar
   ENCRYPTION_ENABLED: 'true'                   # set to 'false' to skip AES-256 encryption
+  ZSTD_LEVEL: '19'                             # zstd level 1 (fastest) to 19 (smallest, default)
   # These variables should come from a Secret
   #DB_USERNAME: ''
   #DB_HOSTNAME: ''
